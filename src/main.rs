@@ -86,6 +86,8 @@ async fn run_app(
 ) -> Result<()> {
     let mut app = App::new(wallet.clone());
     let events = EventHandler::new(100);
+    let mut last_auto_refresh = std::time::Instant::now();
+    let auto_refresh_interval = std::time::Duration::from_secs(30);
 
     let (tx, mut rx) = mpsc::channel::<DataMsg>(32);
 
@@ -131,6 +133,13 @@ async fn run_app(
             app.loading = true;
             spawn_portfolio_fetch(tx.clone(), api_key.clone(), wallet.clone());
             spawn_transaction_fetch(tx.clone(), api_key.clone(), wallet.clone());
+            last_auto_refresh = std::time::Instant::now();
+        }
+
+        // Auto-refresh every 30s for sparkline data
+        if last_auto_refresh.elapsed() >= auto_refresh_interval {
+            spawn_portfolio_fetch(tx.clone(), api_key.clone(), wallet.clone());
+            last_auto_refresh = std::time::Instant::now();
         }
 
         // Token lookup trigger

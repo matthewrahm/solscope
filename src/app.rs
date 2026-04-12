@@ -1,5 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+use crate::data::cache::PriceHistory;
 use crate::data::portfolio::Portfolio;
 use crate::data::token_info::TokenInfo;
 use crate::data::transaction::Transaction;
@@ -66,6 +67,9 @@ pub struct App {
     pub whale_state: WhaleState,
     pub whale_fetch_trigger: Option<String>,
 
+    // Price tracking
+    pub price_history: PriceHistory,
+
     // General
     pub should_quit: bool,
     pub should_refresh: bool,
@@ -92,6 +96,7 @@ impl App {
             token_lookup_trigger: None,
             whale_state: WhaleState::new(),
             whale_fetch_trigger: None,
+            price_history: PriceHistory::new(60), // 60 samples for sparkline
             should_quit: false,
             should_refresh: false,
             loading: true,
@@ -323,6 +328,13 @@ impl App {
             .filter(|h| h.value_usd >= 0.01 || h.price_usd > 0.0)
             .count()
             + 1;
+
+        // Record SOL price for sparkline
+        self.price_history.record(
+            "So11111111111111111111111111111111111111112",
+            portfolio.sol_price,
+        );
+
         self.portfolio = Some(portfolio);
         self.loading = false;
         self.last_refresh = Some(chrono::Utc::now());
