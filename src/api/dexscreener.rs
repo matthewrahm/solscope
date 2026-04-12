@@ -7,6 +7,7 @@ pub struct DexScreenerClient {
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct DexPair {
     #[serde(default)]
     pub dex_id: String,
@@ -21,6 +22,7 @@ pub struct DexPair {
 }
 
 #[derive(Deserialize, Debug, Clone, Default)]
+#[allow(dead_code)]
 pub struct PriceChange {
     pub h1: Option<f64>,
     pub h6: Option<f64>,

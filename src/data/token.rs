@@ -1,4 +1,5 @@
 /// A fungible token held by a wallet
+#[allow(dead_code)]
 pub struct TokenAsset {
     pub mint: String,
     pub symbol: String,

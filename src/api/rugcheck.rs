@@ -18,6 +18,7 @@ pub struct RugCheckReport {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[allow(dead_code)]
 pub struct RiskItem {
     pub name: Option<String>,
     pub level: Option<String>,
@@ -25,6 +26,7 @@ pub struct RiskItem {
 }
 
 #[derive(Deserialize, Debug, Clone)]
+#[allow(dead_code)]
 pub struct HolderInfo {
     pub address: Option<String>,
     pub pct: Option<f64>,

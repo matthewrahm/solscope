@@ -44,6 +44,7 @@ enum DataMsg {
         sol_balance: f64,
         txs: Vec<Transaction>,
     },
+    #[allow(dead_code)]
     Error(String),
 }
 

@@ -22,6 +22,7 @@ impl TxType {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Transaction {
     pub signature: String,
     pub tx_type: TxType,

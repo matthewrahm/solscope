@@ -34,7 +34,6 @@ pub fn render(frame: &mut Frame, area: Rect) {
         ]),
         Line::from(""),
         help_line("s", "Cycle sort (value/name/balance)"),
-        help_line("y", "Copy selected address"),
         Line::from(""),
         Line::from(vec![
             Span::styled("  TOKEN LOOKUP", Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)),
@@ -43,6 +42,13 @@ pub fn render(frame: &mut Frame, area: Rect) {
         help_line("/", "Search by mint address"),
         help_line("Enter", "Submit search"),
         help_line("Esc", "Cancel search"),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("  WHALE TRACKER", Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)),
+        ]),
+        Line::from(""),
+        help_line("a", "Add wallet to track"),
+        help_line("d", "Remove selected wallet"),
     ];
 
     let help = Paragraph::new(lines).block(

@@ -7,6 +7,7 @@ use crate::data::transaction::Transaction;
 pub struct HeliusClient {
     client: reqwest::Client,
     rpc_url: String,
+    #[allow(dead_code)]
     api_url: String,
 }
 
@@ -36,8 +37,10 @@ struct DasResponse {
 struct DasResult {
     items: Vec<DasItem>,
     #[serde(default)]
+    #[allow(dead_code)]
     total: u32,
     #[serde(default)]
+    #[allow(dead_code)]
     limit: u32,
 }
 
@@ -63,6 +66,7 @@ struct DasMetadata {
 struct DasTokenInfo {
     balance: Option<u64>,
     decimals: Option<u8>,
+    #[allow(dead_code)]
     associated_token_address: Option<String>,
 }
 
@@ -260,6 +264,7 @@ struct SignatureInfo {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct HeliusParsedTx {
     #[serde(default)]
     pub signature: String,
@@ -284,6 +289,7 @@ pub struct HeliusParsedTx {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 pub struct HeliusTokenTransfer {
     #[serde(default)]
     pub mint: String,

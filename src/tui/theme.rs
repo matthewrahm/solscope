@@ -12,7 +12,6 @@ pub const TEXT_MUTED: Color = Color::Rgb(74, 85, 120);       // #4a5578
 
 // Accent
 pub const ACCENT: Color = Color::Rgb(77, 159, 255);     // #4d9fff
-pub const ACCENT_DIM: Color = Color::Rgb(40, 90, 160);  // #285aa0
 
 // Semantic
 pub const GREEN: Color = Color::Rgb(34, 197, 94);       // #22c55e
@@ -21,4 +20,3 @@ pub const YELLOW: Color = Color::Rgb(234, 179, 8);      // #eab308
 
 // Borders
 pub const BORDER: Color = Color::Rgb(40, 50, 80);       // #283250
-pub const BORDER_ACTIVE: Color = ACCENT;

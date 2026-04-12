@@ -2,11 +2,13 @@ use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 /// Simple in-memory TTL cache
+#[allow(dead_code)]
 pub struct Cache<T> {
     entries: HashMap<String, (Instant, T)>,
     ttl: Duration,
 }
 
+#[allow(dead_code)]
 impl<T: Clone> Cache<T> {
     pub fn new(ttl_secs: u64) -> Self {
         Self {

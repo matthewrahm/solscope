@@ -4,6 +4,7 @@ use std::fmt;
 use crate::app::SortMode;
 use crate::data::token::TokenAsset;
 
+#[allow(dead_code)]
 pub struct Holding {
     pub symbol: String,
     pub name: String,
