@@ -19,6 +19,8 @@ use tokio::sync::mpsc;
 
 use crate::app::App;
 use crate::data::portfolio::Portfolio;
+use crate::data::token_info::TokenInfo;
+use crate::data::transaction::Transaction;
 use crate::tui::event::{AppEvent, EventHandler};
 
 #[derive(Parser, Debug)]
@@ -35,6 +37,8 @@ struct Args {
 
 enum DataMsg {
     Portfolio(Portfolio),
+    Transactions(Vec<Transaction>),
+    TokenInfo(Option<TokenInfo>),
     Error(String),
 }
 
@@ -76,26 +80,26 @@ async fn run_app(
     api_key: String,
 ) -> Result<()> {
     let mut app = App::new(wallet.clone());
-    let events = EventHandler::new(100); // 100ms tick rate
+    let events = EventHandler::new(100);
 
-    // Channel for background data fetches
-    let (tx, mut rx) = mpsc::channel::<DataMsg>(16);
+    let (tx, mut rx) = mpsc::channel::<DataMsg>(32);
 
-    // Initial data fetch
-    spawn_fetch(tx.clone(), api_key.clone(), wallet.clone());
+    // Initial data fetches — portfolio and transactions in parallel
+    spawn_portfolio_fetch(tx.clone(), api_key.clone(), wallet.clone());
+    spawn_transaction_fetch(tx.clone(), api_key.clone(), wallet.clone());
 
     loop {
         // Draw
         terminal.draw(|frame| ui::draw(frame, &app))?;
 
-        // Check for data updates (non-blocking)
-        if let Ok(msg) = rx.try_recv() {
+        // Drain all pending data messages
+        while let Ok(msg) = rx.try_recv() {
             match msg {
                 DataMsg::Portfolio(p) => app.set_portfolio(p),
-                DataMsg::Error(e) => {
-                    // For now just mark as not loading — could show error in UI later
+                DataMsg::Transactions(txs) => app.set_transactions(txs),
+                DataMsg::TokenInfo(info) => app.set_token_info(info),
+                DataMsg::Error(_) => {
                     app.loading = false;
-                    eprintln!("Data fetch error: {e}");
                 }
             }
         }
@@ -103,7 +107,6 @@ async fn run_app(
         // Handle events
         match events.next()? {
             AppEvent::Key(key) => {
-                // Only handle key press events (not release/repeat)
                 if key.kind == KeyEventKind::Press {
                     app.handle_key(key);
                 }
@@ -118,14 +121,20 @@ async fn run_app(
         if app.should_refresh {
             app.should_refresh = false;
             app.loading = true;
-            spawn_fetch(tx.clone(), api_key.clone(), wallet.clone());
+            spawn_portfolio_fetch(tx.clone(), api_key.clone(), wallet.clone());
+            spawn_transaction_fetch(tx.clone(), api_key.clone(), wallet.clone());
+        }
+
+        // Token lookup trigger
+        if let Some(mint) = app.token_lookup_trigger.take() {
+            spawn_token_lookup(tx.clone(), mint);
         }
     }
 
     Ok(())
 }
 
-fn spawn_fetch(tx: mpsc::Sender<DataMsg>, api_key: String, wallet: String) {
+fn spawn_portfolio_fetch(tx: mpsc::Sender<DataMsg>, api_key: String, wallet: String) {
     tokio::spawn(async move {
         match fetch_portfolio(&api_key, &wallet).await {
             Ok(portfolio) => {
@@ -133,6 +142,32 @@ fn spawn_fetch(tx: mpsc::Sender<DataMsg>, api_key: String, wallet: String) {
             }
             Err(e) => {
                 let _ = tx.send(DataMsg::Error(e.to_string())).await;
+            }
+        }
+    });
+}
+
+fn spawn_transaction_fetch(tx: mpsc::Sender<DataMsg>, api_key: String, wallet: String) {
+    tokio::spawn(async move {
+        match fetch_transactions(&api_key, &wallet).await {
+            Ok(txs) => {
+                let _ = tx.send(DataMsg::Transactions(txs)).await;
+            }
+            Err(e) => {
+                let _ = tx.send(DataMsg::Error(e.to_string())).await;
+            }
+        }
+    });
+}
+
+fn spawn_token_lookup(tx: mpsc::Sender<DataMsg>, mint: String) {
+    tokio::spawn(async move {
+        match fetch_token_info(&mint).await {
+            Ok(info) => {
+                let _ = tx.send(DataMsg::TokenInfo(info)).await;
+            }
+            Err(_) => {
+                let _ = tx.send(DataMsg::TokenInfo(None)).await;
             }
         }
     });
@@ -157,4 +192,23 @@ async fn fetch_portfolio(api_key: &str, wallet: &str) -> Result<Portfolio> {
     };
 
     Ok(Portfolio::build(sol_balance, sol_price, assets, &prices))
+}
+
+async fn fetch_transactions(api_key: &str, wallet: &str) -> Result<Vec<Transaction>> {
+    let helius = api::helius::HeliusClient::new(api_key);
+    helius.get_parsed_transactions(wallet, 50).await
+}
+
+async fn fetch_token_info(mint: &str) -> Result<Option<TokenInfo>> {
+    let dex = api::dexscreener::DexScreenerClient::new();
+    let rug = api::rugcheck::RugCheckClient::new();
+
+    // Fetch both in parallel
+    let (dex_result, rug_result) = tokio::join!(dex.get_token_info(mint), rug.get_report(mint));
+
+    Ok(TokenInfo::from_dex_and_rug(
+        mint,
+        dex_result.ok().flatten(),
+        rug_result.ok().flatten(),
+    ))
 }

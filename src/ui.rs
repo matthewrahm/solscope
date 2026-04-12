@@ -71,15 +71,13 @@ fn render_tabs(frame: &mut Frame, area: Rect, app: &App) {
 fn render_content(frame: &mut Frame, area: Rect, app: &App) {
     match app.screen {
         Screen::Portfolio => screens::portfolio::render(frame, area, app),
+        Screen::Transactions => screens::transactions::render(frame, area, app),
+        Screen::TokenLookup => screens::token_lookup::render(frame, area, app),
         Screen::Help => screens::help::render(frame, area),
-        Screen::Transactions | Screen::Whales | Screen::TokenLookup => {
-            render_placeholder(frame, area, app.screen.label());
+        Screen::Whales => {
+            let text = ratatui::widgets::Paragraph::new("\n  Whale Tracker - coming soon")
+                .style(Style::default().fg(theme::TEXT_MUTED));
+            frame.render_widget(text, area);
         }
     }
-}
-
-fn render_placeholder(frame: &mut Frame, area: Rect, name: &str) {
-    let text = ratatui::widgets::Paragraph::new(format!("\n  {} - coming soon", name))
-        .style(Style::default().fg(theme::TEXT_MUTED));
-    frame.render_widget(text, area);
 }
