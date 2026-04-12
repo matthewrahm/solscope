@@ -3,6 +3,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use crate::data::portfolio::Portfolio;
 use crate::data::token_info::TokenInfo;
 use crate::data::transaction::Transaction;
+use crate::data::whale::WhaleState;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Screen {
@@ -61,6 +62,10 @@ pub struct App {
     pub token_loading: bool,
     pub token_lookup_trigger: Option<String>,
 
+    // Whale tracker
+    pub whale_state: WhaleState,
+    pub whale_fetch_trigger: Option<String>,
+
     // General
     pub should_quit: bool,
     pub should_refresh: bool,
@@ -85,6 +90,8 @@ impl App {
             token_info: None,
             token_loading: false,
             token_lookup_trigger: None,
+            whale_state: WhaleState::new(),
+            whale_fetch_trigger: None,
             should_quit: false,
             should_refresh: false,
             loading: true,
@@ -99,9 +106,13 @@ impl App {
             return;
         }
 
-        // Token lookup input mode captures all keys
+        // Input modes capture all keys
         if self.token_input_active {
             self.handle_token_input(key);
+            return;
+        }
+        if self.whale_state.input_active {
+            self.handle_whale_input(key);
             return;
         }
 
@@ -133,6 +144,7 @@ impl App {
             KeyCode::Char('g') => {
                 self.table_selected = 0;
                 self.tx_selected = 0;
+                self.whale_state.selected = 0;
             }
             KeyCode::Char('G') => self.jump_to_bottom(),
 
@@ -144,6 +156,17 @@ impl App {
             KeyCode::Char('/') if self.screen == Screen::TokenLookup => {
                 self.token_input_active = true;
                 self.token_search_input.clear();
+            }
+
+            // Whale tracker actions
+            KeyCode::Char('a') if self.screen == Screen::Whales => {
+                self.whale_state.input_active = true;
+                self.whale_state.input_field = 0;
+                self.whale_state.input_buffer.clear();
+                self.whale_state.pending_address.clear();
+            }
+            KeyCode::Char('d') if self.screen == Screen::Whales => {
+                self.whale_state.remove_selected();
             }
 
             _ => {}
@@ -173,6 +196,47 @@ impl App {
         }
     }
 
+    fn handle_whale_input(&mut self, key: KeyEvent) {
+        match key.code {
+            KeyCode::Esc => {
+                self.whale_state.input_active = false;
+                self.whale_state.input_buffer.clear();
+                self.whale_state.pending_address.clear();
+            }
+            KeyCode::Enter => {
+                if self.whale_state.input_field == 0 {
+                    // Address entered, now ask for label
+                    if !self.whale_state.input_buffer.is_empty() {
+                        self.whale_state.pending_address = self.whale_state.input_buffer.clone();
+                        self.whale_state.input_buffer.clear();
+                        self.whale_state.input_field = 1;
+                    }
+                } else {
+                    // Label entered, add the wallet
+                    let address = self.whale_state.pending_address.clone();
+                    let label = if self.whale_state.input_buffer.is_empty() {
+                        format!("Wallet {}", self.whale_state.wallets.len() + 1)
+                    } else {
+                        self.whale_state.input_buffer.clone()
+                    };
+                    self.whale_state.add_wallet(address.clone(), label);
+                    self.whale_state.input_active = false;
+                    self.whale_state.input_buffer.clear();
+                    self.whale_state.pending_address.clear();
+                    // Trigger fetch for the new wallet
+                    self.whale_fetch_trigger = Some(address);
+                }
+            }
+            KeyCode::Backspace => {
+                self.whale_state.input_buffer.pop();
+            }
+            KeyCode::Char(c) => {
+                self.whale_state.input_buffer.push(c);
+            }
+            _ => {}
+        }
+    }
+
     fn select_next(&mut self) {
         match self.screen {
             Screen::Portfolio => {
@@ -184,6 +248,12 @@ impl App {
                 let len = self.transactions.as_ref().map(|t| t.len()).unwrap_or(0);
                 if len > 0 && self.tx_selected < len - 1 {
                     self.tx_selected += 1;
+                }
+            }
+            Screen::Whales => {
+                let len = self.whale_state.wallets.len();
+                if len > 0 && self.whale_state.selected < len - 1 {
+                    self.whale_state.selected += 1;
                 }
             }
             _ => {}
@@ -202,6 +272,11 @@ impl App {
                     self.tx_selected -= 1;
                 }
             }
+            Screen::Whales => {
+                if self.whale_state.selected > 0 {
+                    self.whale_state.selected -= 1;
+                }
+            }
             _ => {}
         }
     }
@@ -217,6 +292,12 @@ impl App {
                 let len = self.transactions.as_ref().map(|t| t.len()).unwrap_or(0);
                 if len > 0 {
                     self.tx_selected = len - 1;
+                }
+            }
+            Screen::Whales => {
+                let len = self.whale_state.wallets.len();
+                if len > 0 {
+                    self.whale_state.selected = len - 1;
                 }
             }
             _ => {}
@@ -241,7 +322,7 @@ impl App {
             .iter()
             .filter(|h| h.value_usd >= 0.01 || h.price_usd > 0.0)
             .count()
-            + 1; // +1 for SOL row
+            + 1;
         self.portfolio = Some(portfolio);
         self.loading = false;
         self.last_refresh = Some(chrono::Utc::now());
@@ -254,6 +335,19 @@ impl App {
     pub fn set_token_info(&mut self, info: Option<TokenInfo>) {
         self.token_info = info;
         self.token_loading = false;
+    }
+
+    pub fn update_whale_data(
+        &mut self,
+        address: &str,
+        sol_balance: f64,
+        txs: Vec<Transaction>,
+    ) {
+        if let Some(wallet) = self.whale_state.wallets.iter_mut().find(|w| w.address == address) {
+            wallet.sol_balance = Some(sol_balance);
+            wallet.recent_txs = txs;
+            wallet.loading = false;
+        }
     }
 
     pub fn last_refresh_label(&self) -> String {

@@ -39,6 +39,11 @@ enum DataMsg {
     Portfolio(Portfolio),
     Transactions(Vec<Transaction>),
     TokenInfo(Option<TokenInfo>),
+    WhaleData {
+        address: String,
+        sol_balance: f64,
+        txs: Vec<Transaction>,
+    },
     Error(String),
 }
 
@@ -98,6 +103,9 @@ async fn run_app(
                 DataMsg::Portfolio(p) => app.set_portfolio(p),
                 DataMsg::Transactions(txs) => app.set_transactions(txs),
                 DataMsg::TokenInfo(info) => app.set_token_info(info),
+                DataMsg::WhaleData { address, sol_balance, txs } => {
+                    app.update_whale_data(&address, sol_balance, txs);
+                }
                 DataMsg::Error(_) => {
                     app.loading = false;
                 }
@@ -128,6 +136,11 @@ async fn run_app(
         // Token lookup trigger
         if let Some(mint) = app.token_lookup_trigger.take() {
             spawn_token_lookup(tx.clone(), mint);
+        }
+
+        // Whale fetch trigger
+        if let Some(address) = app.whale_fetch_trigger.take() {
+            spawn_whale_fetch(tx.clone(), api_key.clone(), address);
         }
     }
 
@@ -170,6 +183,24 @@ fn spawn_token_lookup(tx: mpsc::Sender<DataMsg>, mint: String) {
                 let _ = tx.send(DataMsg::TokenInfo(None)).await;
             }
         }
+    });
+}
+
+fn spawn_whale_fetch(tx: mpsc::Sender<DataMsg>, api_key: String, address: String) {
+    tokio::spawn(async move {
+        let helius = api::helius::HeliusClient::new(&api_key);
+        let sol_balance = helius.get_sol_balance(&address).await.unwrap_or(0.0);
+        let txs = helius
+            .get_parsed_transactions(&address, 20)
+            .await
+            .unwrap_or_default();
+        let _ = tx
+            .send(DataMsg::WhaleData {
+                address,
+                sol_balance,
+                txs,
+            })
+            .await;
     });
 }
 

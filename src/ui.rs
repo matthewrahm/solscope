@@ -74,10 +74,6 @@ fn render_content(frame: &mut Frame, area: Rect, app: &App) {
         Screen::Transactions => screens::transactions::render(frame, area, app),
         Screen::TokenLookup => screens::token_lookup::render(frame, area, app),
         Screen::Help => screens::help::render(frame, area),
-        Screen::Whales => {
-            let text = ratatui::widgets::Paragraph::new("\n  Whale Tracker - coming soon")
-                .style(Style::default().fg(theme::TEXT_MUTED));
-            frame.render_widget(text, area);
-        }
+        Screen::Whales => screens::whales::render(frame, area, app),
     }
 }
