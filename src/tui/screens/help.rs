@@ -11,9 +11,12 @@ use crate::tui::theme;
 pub fn render(frame: &mut Frame, area: Rect) {
     let lines = vec![
         Line::from(""),
-        Line::from(vec![
-            Span::styled("  NAVIGATION", Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)),
-        ]),
+        Line::from(vec![Span::styled(
+            "  NAVIGATION",
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
         help_line("1-4", "Switch tabs"),
         help_line("j / Down", "Move down"),
@@ -22,30 +25,42 @@ pub fn render(frame: &mut Frame, area: Rect) {
         help_line("G", "Jump to bottom"),
         help_line("r", "Refresh data"),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("  GENERAL", Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)),
-        ]),
+        Line::from(vec![Span::styled(
+            "  GENERAL",
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
         help_line("?", "Toggle help"),
         help_line("q / Ctrl+C", "Quit"),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("  PORTFOLIO", Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)),
-        ]),
+        Line::from(vec![Span::styled(
+            "  PORTFOLIO",
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
         help_line("s", "Cycle sort (value/name/balance)"),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("  TOKEN LOOKUP", Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)),
-        ]),
+        Line::from(vec![Span::styled(
+            "  TOKEN LOOKUP",
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
         help_line("/", "Search by mint address"),
         help_line("Enter", "Submit search"),
         help_line("Esc", "Cancel search"),
         Line::from(""),
-        Line::from(vec![
-            Span::styled("  WHALE TRACKER", Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)),
-        ]),
+        Line::from(vec![Span::styled(
+            "  WHALE TRACKER",
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
         help_line("a", "Add wallet to track"),
         help_line("d", "Remove selected wallet"),

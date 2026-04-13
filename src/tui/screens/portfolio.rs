@@ -13,7 +13,7 @@ use crate::tui::{theme, widgets::token_table};
 pub fn render(frame: &mut Frame, area: Rect, app: &App) {
     let chunks = Layout::vertical([
         Constraint::Length(5), // summary header
-        Constraint::Min(10),  // token table
+        Constraint::Min(10),   // token table
     ])
     .split(area);
 
@@ -96,7 +96,10 @@ fn render_summary(frame: &mut Frame, area: Rect, app: &App) {
         Line::from(""),
         Line::from(vec![
             Span::styled("  Tokens  ", Style::default().fg(theme::TEXT_MUTED)),
-            Span::styled(format!("{token_count}"), Style::default().fg(theme::TEXT_PRIMARY)),
+            Span::styled(
+                format!("{token_count}"),
+                Style::default().fg(theme::TEXT_PRIMARY),
+            ),
             Span::styled(
                 format!("    Sort: {sort_label}"),
                 Style::default().fg(theme::TEXT_MUTED),
@@ -152,19 +155,15 @@ fn render_summary(frame: &mut Frame, area: Rect, app: &App) {
     } else {
         let placeholder = Paragraph::new(vec![
             Line::from(""),
-            Line::from(vec![
-                Span::styled(
-                    format!("  SOL {price_label}"),
-                    Style::default().fg(theme::ACCENT),
-                ),
-            ]),
+            Line::from(vec![Span::styled(
+                format!("  SOL {price_label}"),
+                Style::default().fg(theme::ACCENT),
+            )]),
             Line::from(""),
-            Line::from(vec![
-                Span::styled(
-                    "  collecting data...",
-                    Style::default().fg(theme::TEXT_MUTED),
-                ),
-            ]),
+            Line::from(vec![Span::styled(
+                "  collecting data...",
+                Style::default().fg(theme::TEXT_MUTED),
+            )]),
         ])
         .block(
             Block::default()
@@ -195,8 +194,6 @@ fn render_holdings(frame: &mut Frame, area: Rect, app: &App) {
 fn format_usd(value: f64) -> String {
     if value >= 1_000_000.0 {
         format!("${:.2}M", value / 1_000_000.0)
-    } else if value >= 1_000.0 {
-        format!("${:.2}", value)
     } else {
         format!("${:.2}", value)
     }

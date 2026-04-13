@@ -24,7 +24,11 @@ use crate::data::transaction::Transaction;
 use crate::tui::event::{AppEvent, EventHandler};
 
 #[derive(Parser, Debug)]
-#[command(name = "solscope", version, about = "Terminal analytics dashboard for Solana wallets")]
+#[command(
+    name = "solscope",
+    version,
+    about = "Terminal analytics dashboard for Solana wallets"
+)]
 struct Args {
     /// Solana wallet address to analyze
     #[arg(short, long)]
@@ -38,7 +42,7 @@ struct Args {
 enum DataMsg {
     Portfolio(Portfolio),
     Transactions(Vec<Transaction>),
-    TokenInfo(Option<TokenInfo>),
+    TokenInfo(Box<Option<TokenInfo>>),
     WhaleData {
         address: String,
         sol_balance: f64,
@@ -105,8 +109,12 @@ async fn run_app(
             match msg {
                 DataMsg::Portfolio(p) => app.set_portfolio(p),
                 DataMsg::Transactions(txs) => app.set_transactions(txs),
-                DataMsg::TokenInfo(info) => app.set_token_info(info),
-                DataMsg::WhaleData { address, sol_balance, txs } => {
+                DataMsg::TokenInfo(info) => app.set_token_info(*info),
+                DataMsg::WhaleData {
+                    address,
+                    sol_balance,
+                    txs,
+                } => {
                     app.update_whale_data(&address, sol_balance, txs);
                 }
                 DataMsg::Error(_) => {
@@ -187,10 +195,10 @@ fn spawn_token_lookup(tx: mpsc::Sender<DataMsg>, mint: String) {
     tokio::spawn(async move {
         match fetch_token_info(&mint).await {
             Ok(info) => {
-                let _ = tx.send(DataMsg::TokenInfo(info)).await;
+                let _ = tx.send(DataMsg::TokenInfo(Box::new(info))).await;
             }
             Err(_) => {
-                let _ = tx.send(DataMsg::TokenInfo(None)).await;
+                let _ = tx.send(DataMsg::TokenInfo(Box::new(None))).await;
             }
         }
     });

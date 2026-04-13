@@ -12,7 +12,7 @@ use crate::tui::{screens, theme, widgets::status_bar};
 pub fn draw(frame: &mut Frame, app: &App) {
     let chunks = Layout::vertical([
         Constraint::Length(2), // tabs
-        Constraint::Min(0),   // content
+        Constraint::Min(0),    // content
         Constraint::Length(1), // status bar
     ])
     .split(frame.area());
@@ -36,10 +36,7 @@ fn render_tabs(frame: &mut Frame, area: Rect, app: &App) {
             let num = format!("{}", i + 1);
             let label = tab.label();
             Line::from(vec![
-                Span::styled(
-                    format!(" {num}"),
-                    Style::default().fg(theme::ACCENT),
-                ),
+                Span::styled(format!(" {num}"), Style::default().fg(theme::ACCENT)),
                 Span::styled(
                     format!(" {label} "),
                     if app.screen == *tab {

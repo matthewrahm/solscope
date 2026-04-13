@@ -349,13 +349,13 @@ impl App {
         self.token_loading = false;
     }
 
-    pub fn update_whale_data(
-        &mut self,
-        address: &str,
-        sol_balance: f64,
-        txs: Vec<Transaction>,
-    ) {
-        if let Some(wallet) = self.whale_state.wallets.iter_mut().find(|w| w.address == address) {
+    pub fn update_whale_data(&mut self, address: &str, sol_balance: f64, txs: Vec<Transaction>) {
+        if let Some(wallet) = self
+            .whale_state
+            .wallets
+            .iter_mut()
+            .find(|w| w.address == address)
+        {
             wallet.sol_balance = Some(sol_balance);
             wallet.recent_txs = txs;
             wallet.loading = false;

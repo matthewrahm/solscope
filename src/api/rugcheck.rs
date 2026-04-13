@@ -43,21 +43,15 @@ impl RugCheckReport {
     }
 
     pub fn mint_revoked(&self) -> bool {
-        self.mint_authority.as_deref() == Some("")
-            || self.mint_authority.is_none()
+        self.mint_authority.as_deref() == Some("") || self.mint_authority.is_none()
     }
 
     pub fn freeze_revoked(&self) -> bool {
-        self.freeze_authority.as_deref() == Some("")
-            || self.freeze_authority.is_none()
+        self.freeze_authority.as_deref() == Some("") || self.freeze_authority.is_none()
     }
 
     pub fn top_holder_pct(&self) -> f64 {
-        self.top_holders
-            .iter()
-            .take(10)
-            .filter_map(|h| h.pct)
-            .sum()
+        self.top_holders.iter().take(10).filter_map(|h| h.pct).sum()
     }
 }
 

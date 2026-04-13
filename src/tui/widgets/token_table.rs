@@ -19,15 +19,15 @@ pub fn render_token_table<'a>(
     // SOL row first
     let sol_value = sol_balance * sol_price;
     let sol_row = Row::new(vec![
-        Cell::from(Line::from(vec![
-            Span::styled("SOL", Style::default().fg(theme::ACCENT).add_modifier(Modifier::BOLD)),
-        ])),
-        Cell::from(format_balance(sol_balance))
-            .style(Style::default().fg(theme::TEXT_PRIMARY)),
-        Cell::from(format_price(sol_price))
-            .style(Style::default().fg(theme::TEXT_SECONDARY)),
-        Cell::from(format_value(sol_value))
-            .style(Style::default().fg(theme::TEXT_PRIMARY)),
+        Cell::from(Line::from(vec![Span::styled(
+            "SOL",
+            Style::default()
+                .fg(theme::ACCENT)
+                .add_modifier(Modifier::BOLD),
+        )])),
+        Cell::from(format_balance(sol_balance)).style(Style::default().fg(theme::TEXT_PRIMARY)),
+        Cell::from(format_price(sol_price)).style(Style::default().fg(theme::TEXT_SECONDARY)),
+        Cell::from(format_value(sol_value)).style(Style::default().fg(theme::TEXT_PRIMARY)),
     ]);
     rows.push(sol_row);
 
@@ -41,12 +41,9 @@ pub fn render_token_table<'a>(
 
         let row = Row::new(vec![
             Cell::from(truncate(&h.symbol, 10)).style(symbol_style),
-            Cell::from(format_balance(h.balance))
-                .style(Style::default().fg(theme::TEXT_PRIMARY)),
-            Cell::from(format_price(h.price_usd))
-                .style(Style::default().fg(theme::TEXT_SECONDARY)),
-            Cell::from(format_value(h.value_usd))
-                .style(Style::default().fg(theme::TEXT_PRIMARY)),
+            Cell::from(format_balance(h.balance)).style(Style::default().fg(theme::TEXT_PRIMARY)),
+            Cell::from(format_price(h.price_usd)).style(Style::default().fg(theme::TEXT_SECONDARY)),
+            Cell::from(format_value(h.value_usd)).style(Style::default().fg(theme::TEXT_PRIMARY)),
         ]);
         rows.push(row);
     }

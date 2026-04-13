@@ -42,13 +42,11 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
         let row = Row::new(vec![
             Cell::from(tx.time_ago()).style(Style::default().fg(theme::TEXT_MUTED)),
             Cell::from(tx.tx_type.label()).style(type_style),
-            Cell::from(
-                if tx.source.is_empty() {
-                    "-".to_string()
-                } else {
-                    tx.source.clone()
-                },
-            )
+            Cell::from(if tx.source.is_empty() {
+                "-".to_string()
+            } else {
+                tx.source.clone()
+            })
             .style(Style::default().fg(theme::TEXT_SECONDARY)),
             Cell::from(details_str).style(Style::default().fg(theme::TEXT_PRIMARY)),
             Cell::from(value_str).style(Style::default().fg(theme::TEXT_PRIMARY)),
@@ -83,10 +81,7 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
                 .title(Line::from(vec![
                     Span::styled(" Transactions ", Style::default().fg(theme::ACCENT)),
                     Span::styled(
-                        format!(
-                            "({}) ",
-                            txs.len()
-                        ),
+                        format!("({}) ", txs.len()),
                         Style::default().fg(theme::TEXT_MUTED),
                     ),
                 ])),

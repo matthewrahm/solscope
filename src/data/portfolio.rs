@@ -90,8 +90,8 @@ impl fmt::Display for Portfolio {
         writeln!(f, "  {}", "-".repeat(60))?;
         writeln!(
             f,
-            "  {:<12} {:>12}    {:<12}  {}",
-            "TOKEN", "AMOUNT", "PRICE", "VALUE"
+            "  {:<12} {:>12}    {:<12}  VALUE",
+            "TOKEN", "AMOUNT", "PRICE"
         )?;
         writeln!(f, "  {}", "-".repeat(60))?;
 

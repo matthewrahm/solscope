@@ -33,7 +33,8 @@ impl<T: Clone> Cache<T> {
 
     /// Remove expired entries
     pub fn cleanup(&mut self) {
-        self.entries.retain(|_, (created, _)| created.elapsed() < self.ttl);
+        self.entries
+            .retain(|_, (created, _)| created.elapsed() < self.ttl);
     }
 }
 

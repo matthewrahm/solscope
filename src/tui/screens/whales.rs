@@ -26,7 +26,7 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
 
     let chunks = Layout::vertical([
         Constraint::Length(5 + whale.wallets.len() as u16), // wallet list
-        Constraint::Min(8),                                  // activity feed
+        Constraint::Min(8),                                 // activity feed
     ])
     .split(area);
 
@@ -38,17 +38,18 @@ fn render_empty(frame: &mut Frame, area: Rect) {
     let lines = vec![
         Line::from(""),
         Line::from(""),
-        Line::from(vec![
-            Span::styled(
-                "  No wallets tracked yet",
-                Style::default().fg(theme::TEXT_SECONDARY),
-            ),
-        ]),
+        Line::from(vec![Span::styled(
+            "  No wallets tracked yet",
+            Style::default().fg(theme::TEXT_SECONDARY),
+        )]),
         Line::from(""),
         Line::from(vec![
             Span::styled("  Press ", Style::default().fg(theme::TEXT_MUTED)),
             Span::styled("a", Style::default().fg(theme::ACCENT)),
-            Span::styled(" to add a wallet to track", Style::default().fg(theme::TEXT_MUTED)),
+            Span::styled(
+                " to add a wallet to track",
+                Style::default().fg(theme::TEXT_MUTED),
+            ),
         ]),
     ];
 
@@ -75,27 +76,26 @@ fn render_add_form(frame: &mut Frame, area: Rect, app: &App) {
 
     let lines = vec![
         Line::from(""),
-        Line::from(vec![
-            Span::styled(
-                "  Add Wallet to Track",
-                Style::default()
-                    .fg(theme::TEXT_PRIMARY)
-                    .add_modifier(Modifier::BOLD),
-            ),
-        ]),
+        Line::from(vec![Span::styled(
+            "  Add Wallet to Track",
+            Style::default()
+                .fg(theme::TEXT_PRIMARY)
+                .add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
         Line::from(vec![
-            Span::styled(format!("  {field_label}: "), Style::default().fg(theme::ACCENT)),
+            Span::styled(
+                format!("  {field_label}: "),
+                Style::default().fg(theme::ACCENT),
+            ),
             Span::styled(&cursor, Style::default().fg(theme::TEXT_PRIMARY)),
         ]),
         Line::from(""),
         if whale.input_field == 0 {
-            Line::from(vec![
-                Span::styled(
-                    "  Paste a Solana wallet address and press Enter",
-                    Style::default().fg(theme::TEXT_MUTED),
-                ),
-            ])
+            Line::from(vec![Span::styled(
+                "  Paste a Solana wallet address and press Enter",
+                Style::default().fg(theme::TEXT_MUTED),
+            )])
         } else {
             Line::from(vec![
                 Span::styled("  Address: ", Style::default().fg(theme::TEXT_MUTED)),
@@ -186,10 +186,7 @@ fn render_wallet_list(frame: &mut Frame, area: Rect, app: &App) {
                         format!(" Tracking {} ", whale.wallets.len()),
                         Style::default().fg(theme::ACCENT),
                     ),
-                    Span::styled(
-                        " a:add  d:remove ",
-                        Style::default().fg(theme::TEXT_MUTED),
-                    ),
+                    Span::styled(" a:add  d:remove ", Style::default().fg(theme::TEXT_MUTED)),
                 ])),
         )
         .row_highlight_style(
@@ -254,7 +251,10 @@ fn render_activity_feed(frame: &mut Frame, area: Rect, app: &App) {
         let detail = format_tx_detail(&tx.details);
 
         lines.push(Line::from(vec![
-            Span::styled(format!("  {:<10}", tx.time_ago()), Style::default().fg(theme::TEXT_MUTED)),
+            Span::styled(
+                format!("  {:<10}", tx.time_ago()),
+                Style::default().fg(theme::TEXT_MUTED),
+            ),
             Span::styled(format!("{:<10}", tx.tx_type.label()), type_style),
             Span::styled(detail, Style::default().fg(theme::TEXT_PRIMARY)),
         ]));

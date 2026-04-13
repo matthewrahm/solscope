@@ -133,15 +133,15 @@ fn parse_swap_details(tx: &HeliusParsedTx, wallet: &str) -> TxDetails {
         if amount == 0.0 {
             continue;
         }
-        if t.from_user_account.to_lowercase() == wallet_lower {
-            if sent.is_none() || amount > sent.unwrap().1 {
-                sent = Some((&t.mint, amount));
-            }
+        if t.from_user_account.to_lowercase() == wallet_lower
+            && (sent.is_none() || amount > sent.unwrap().1)
+        {
+            sent = Some((&t.mint, amount));
         }
-        if t.to_user_account.to_lowercase() == wallet_lower {
-            if received.is_none() || amount > received.unwrap().1 {
-                received = Some((&t.mint, amount));
-            }
+        if t.to_user_account.to_lowercase() == wallet_lower
+            && (received.is_none() || amount > received.unwrap().1)
+        {
+            received = Some((&t.mint, amount));
         }
     }
 
