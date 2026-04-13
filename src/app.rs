@@ -1,5 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
+use crate::config::{Config, WhaleEntry};
 use crate::data::cache::PriceHistory;
 use crate::data::portfolio::Portfolio;
 use crate::data::token_info::TokenInfo;
@@ -66,6 +67,7 @@ pub struct App {
     // Whale tracker
     pub whale_state: WhaleState,
     pub whale_fetch_trigger: Option<String>,
+    pub initial_whale_fetches: Vec<String>,
 
     // Price tracking
     pub price_history: PriceHistory,
@@ -79,6 +81,14 @@ pub struct App {
 
 impl App {
     pub fn new(wallet: String) -> Self {
+        let config = Config::load();
+        let mut whale_state = WhaleState::new();
+        let mut initial_whale_fetches = Vec::new();
+        for entry in &config.whales {
+            whale_state.add_wallet(entry.address.clone(), entry.label.clone());
+            initial_whale_fetches.push(entry.address.clone());
+        }
+
         Self {
             screen: Screen::Portfolio,
             prev_screen: Screen::Portfolio,
@@ -94,9 +104,10 @@ impl App {
             token_info: None,
             token_loading: false,
             token_lookup_trigger: None,
-            whale_state: WhaleState::new(),
+            whale_state,
             whale_fetch_trigger: None,
-            price_history: PriceHistory::new(60), // 60 samples for sparkline
+            initial_whale_fetches,
+            price_history: PriceHistory::new(60),
             should_quit: false,
             should_refresh: false,
             loading: true,
@@ -172,6 +183,7 @@ impl App {
             }
             KeyCode::Char('d') if self.screen == Screen::Whales => {
                 self.whale_state.remove_selected();
+                self.save_whales();
             }
 
             _ => {}
@@ -228,8 +240,8 @@ impl App {
                     self.whale_state.input_active = false;
                     self.whale_state.input_buffer.clear();
                     self.whale_state.pending_address.clear();
-                    // Trigger fetch for the new wallet
                     self.whale_fetch_trigger = Some(address);
+                    self.save_whales();
                 }
             }
             KeyCode::Backspace => {
@@ -360,6 +372,21 @@ impl App {
             wallet.recent_txs = txs;
             wallet.loading = false;
         }
+    }
+
+    fn save_whales(&self) {
+        let config = Config {
+            whales: self
+                .whale_state
+                .wallets
+                .iter()
+                .map(|w| WhaleEntry {
+                    address: w.address.clone(),
+                    label: w.label.clone(),
+                })
+                .collect(),
+        };
+        config.save();
     }
 
     pub fn last_refresh_label(&self) -> String {

@@ -1,5 +1,6 @@
 mod api;
 mod app;
+mod config;
 mod data;
 mod error;
 mod tui;
@@ -99,6 +100,11 @@ async fn run_app(
     // Initial data fetches — portfolio and transactions in parallel
     spawn_portfolio_fetch(tx.clone(), api_key.clone(), wallet.clone());
     spawn_transaction_fetch(tx.clone(), api_key.clone(), wallet.clone());
+
+    // Fetch data for saved whale wallets
+    for addr in app.initial_whale_fetches.drain(..) {
+        spawn_whale_fetch(tx.clone(), api_key.clone(), addr);
+    }
 
     loop {
         // Draw
