@@ -1,6 +1,12 @@
 # solscope
 
+[![CI](https://github.com/matthewrahm/solscope/actions/workflows/ci.yml/badge.svg)](https://github.com/matthewrahm/solscope/actions/workflows/ci.yml)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Rust](https://img.shields.io/badge/rust-1.70%2B-orange)
+
 A real-time terminal analytics dashboard for Solana wallets, built in Rust.
+
+![solscope demo](assets/demo.gif)
 
 ```
 solscope --wallet <SOLANA_ADDRESS>
