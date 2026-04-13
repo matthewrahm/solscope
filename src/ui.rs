@@ -37,6 +37,7 @@ pub fn draw(frame: &mut Frame, app: &App) {
             &app.wallet,
             &app.last_refresh_label(),
             app.loading,
+            app.screen,
         );
     }
 }

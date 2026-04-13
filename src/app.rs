@@ -368,8 +368,28 @@ impl App {
     }
 
     pub fn set_token_info(&mut self, info: Option<TokenInfo>) {
+        if let Some(ref i) = info {
+            self.price_history.record(&i.mint, i.price_usd);
+        }
         self.token_info = info;
         self.token_loading = false;
+    }
+
+    pub fn update_token_price(
+        &mut self,
+        mint: &str,
+        price: f64,
+        change_1h: Option<f64>,
+        change_24h: Option<f64>,
+    ) {
+        self.price_history.record(mint, price);
+        if let Some(ref mut info) = self.token_info {
+            if info.mint == mint {
+                info.price_usd = price;
+                info.price_change_1h = change_1h;
+                info.price_change_24h = change_24h;
+            }
+        }
     }
 
     pub fn update_whale_data(&mut self, address: &str, sol_balance: f64, txs: Vec<Transaction>) {

@@ -44,6 +44,12 @@ enum DataMsg {
     Portfolio(Portfolio),
     Transactions(Vec<Transaction>),
     TokenInfo(Box<Option<TokenInfo>>),
+    TokenPriceUpdate {
+        mint: String,
+        price: f64,
+        change_1h: Option<f64>,
+        change_24h: Option<f64>,
+    },
     WhaleData {
         address: String,
         sol_balance: f64,
@@ -94,6 +100,8 @@ async fn run_app(
     let events = EventHandler::new(100);
     let mut last_auto_refresh = std::time::Instant::now();
     let auto_refresh_interval = std::time::Duration::from_secs(30);
+    let mut last_token_price_refresh = std::time::Instant::now();
+    let token_price_interval = std::time::Duration::from_secs(10);
 
     let (tx, mut rx) = mpsc::channel::<DataMsg>(32);
 
@@ -116,6 +124,14 @@ async fn run_app(
                 DataMsg::Portfolio(p) => app.set_portfolio(p),
                 DataMsg::Transactions(txs) => app.set_transactions(txs),
                 DataMsg::TokenInfo(info) => app.set_token_info(*info),
+                DataMsg::TokenPriceUpdate {
+                    mint,
+                    price,
+                    change_1h,
+                    change_24h,
+                } => {
+                    app.update_token_price(&mint, price, change_1h, change_24h);
+                }
                 DataMsg::WhaleData {
                     address,
                     sol_balance,
@@ -160,6 +176,16 @@ async fn run_app(
         // Token lookup trigger
         if let Some(mint) = app.token_lookup_trigger.take() {
             spawn_token_lookup(tx.clone(), mint);
+            last_token_price_refresh = std::time::Instant::now();
+        }
+
+        // Auto-refresh token price every 10s when viewing a looked-up token
+        if last_token_price_refresh.elapsed() >= token_price_interval {
+            if let Some(info) = &app.token_info {
+                let mint = info.mint.clone();
+                spawn_token_price_fetch(tx.clone(), mint);
+            }
+            last_token_price_refresh = std::time::Instant::now();
         }
 
         // Whale fetch trigger
@@ -206,6 +232,27 @@ fn spawn_token_lookup(tx: mpsc::Sender<DataMsg>, mint: String) {
             Err(_) => {
                 let _ = tx.send(DataMsg::TokenInfo(Box::new(None))).await;
             }
+        }
+    });
+}
+
+fn spawn_token_price_fetch(tx: mpsc::Sender<DataMsg>, mint: String) {
+    tokio::spawn(async move {
+        let dex = api::dexscreener::DexScreenerClient::new();
+        if let Ok(Some(pair)) = dex.get_token_info(&mint).await {
+            let price = pair
+                .price_usd
+                .as_ref()
+                .and_then(|p| p.parse::<f64>().ok())
+                .unwrap_or(0.0);
+            let _ = tx
+                .send(DataMsg::TokenPriceUpdate {
+                    mint,
+                    price,
+                    change_1h: pair.price_change.h1,
+                    change_24h: pair.price_change.h24,
+                })
+                .await;
         }
     });
 }
