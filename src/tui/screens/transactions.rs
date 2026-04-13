@@ -27,6 +27,8 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
         }
     };
 
+    let sol_price = app.portfolio.as_ref().map(|p| p.sol_price).unwrap_or(0.0);
+
     let mut rows = Vec::new();
 
     for tx in txs {
@@ -37,7 +39,15 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
             TxType::Unknown => Style::default().fg(theme::TEXT_MUTED),
         };
 
-        let (details_str, value_str) = format_details(&tx.details);
+        let (details_str, value_str) = format_details(&tx.details, sol_price);
+
+        let value_style = if value_str.starts_with('-') {
+            Style::default().fg(theme::RED)
+        } else if value_str.starts_with('+') {
+            Style::default().fg(theme::GREEN)
+        } else {
+            Style::default().fg(theme::TEXT_SECONDARY)
+        };
 
         let row = Row::new(vec![
             Cell::from(tx.time_ago()).style(Style::default().fg(theme::TEXT_MUTED)),
@@ -49,7 +59,7 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
             })
             .style(Style::default().fg(theme::TEXT_SECONDARY)),
             Cell::from(details_str).style(Style::default().fg(theme::TEXT_PRIMARY)),
-            Cell::from(value_str).style(Style::default().fg(theme::TEXT_PRIMARY)),
+            Cell::from(value_str).style(value_style),
         ]);
         rows.push(row);
     }
@@ -98,23 +108,31 @@ pub fn render(frame: &mut Frame, area: Rect, app: &App) {
     frame.render_stateful_widget(table, area, &mut state);
 }
 
-fn format_details(details: &TxDetails) -> (String, String) {
+fn format_details(details: &TxDetails, sol_price: f64) -> (String, String) {
     match details {
         TxDetails::Swap {
             token_in_symbol,
             token_in_amount,
             token_out_symbol,
             token_out_amount,
-        } => (
-            format!(
+        } => {
+            let detail = format!(
                 "{} {} -> {} {}",
                 format_amount(*token_in_amount),
                 token_in_symbol,
                 format_amount(*token_out_amount),
                 token_out_symbol
-            ),
-            String::new(),
-        ),
+            );
+            // Estimate value from SOL side of the swap
+            let value = if token_in_symbol == "SOL" {
+                format_usd(*token_in_amount * sol_price)
+            } else if token_out_symbol == "SOL" {
+                format_usd(*token_out_amount * sol_price)
+            } else {
+                String::new()
+            };
+            (detail, value)
+        }
         TxDetails::Transfer {
             direction,
             token_symbol,
@@ -125,16 +143,23 @@ fn format_details(details: &TxDetails) -> (String, String) {
                 TransferDirection::Sent => "->",
                 TransferDirection::Received => "<-",
             };
-            (
-                format!(
-                    "{} {} {} {}",
-                    format_amount(*amount),
-                    token_symbol,
-                    arrow,
-                    counterparty
-                ),
-                String::new(),
-            )
+            let detail = format!(
+                "{} {} {} {}",
+                format_amount(*amount),
+                token_symbol,
+                arrow,
+                counterparty
+            );
+            let value = if token_symbol.contains("SOL") {
+                let usd = *amount * sol_price;
+                match direction {
+                    TransferDirection::Sent => format!("-{}", format_usd(usd)),
+                    TransferDirection::Received => format!("+{}", format_usd(usd)),
+                }
+            } else {
+                String::new()
+            };
+            (detail, value)
         }
         TxDetails::NativeSol {
             direction,
@@ -145,10 +170,13 @@ fn format_details(details: &TxDetails) -> (String, String) {
                 TransferDirection::Sent => "->",
                 TransferDirection::Received => "<-",
             };
-            (
-                format!("{:.4} SOL {} {}", amount_sol, arrow, counterparty),
-                String::new(),
-            )
+            let detail = format!("{:.4} SOL {} {}", amount_sol, arrow, counterparty);
+            let usd = *amount_sol * sol_price;
+            let value = match direction {
+                TransferDirection::Sent => format!("-{}", format_usd(usd)),
+                TransferDirection::Received => format!("+{}", format_usd(usd)),
+            };
+            (detail, value)
         }
         TxDetails::Other { summary } => {
             let truncated = if summary.len() > 50 {
@@ -170,5 +198,17 @@ fn format_amount(amount: f64) -> String {
         format!("{:.2}", amount)
     } else {
         format!("{:.4}", amount)
+    }
+}
+
+fn format_usd(value: f64) -> String {
+    if value >= 1_000_000.0 {
+        format!("${:.2}M", value / 1_000_000.0)
+    } else if value >= 1_000.0 {
+        format!("${:.0}", value)
+    } else if value >= 0.01 {
+        format!("${:.2}", value)
+    } else {
+        "$0.00".to_string()
     }
 }
