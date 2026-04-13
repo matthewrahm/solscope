@@ -6,6 +6,7 @@ use crate::data::token::TokenAsset;
 
 #[allow(dead_code)]
 pub struct Holding {
+    pub mint: String,
     pub symbol: String,
     pub name: String,
     pub balance: f64,
@@ -36,6 +37,7 @@ impl Portfolio {
                 let price_usd = prices.get(&asset.mint).copied().unwrap_or(0.0);
                 let value_usd = asset.balance * price_usd;
                 Holding {
+                    mint: asset.mint,
                     symbol: asset.symbol,
                     name: asset.name,
                     balance: asset.balance,

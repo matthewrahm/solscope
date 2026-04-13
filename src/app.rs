@@ -72,6 +72,9 @@ pub struct App {
     // Price tracking
     pub price_history: PriceHistory,
 
+    // Status message (brief notifications)
+    pub status_msg: Option<(String, std::time::Instant)>,
+
     // General
     pub should_quit: bool,
     pub should_refresh: bool,
@@ -108,6 +111,7 @@ impl App {
             whale_fetch_trigger: None,
             initial_whale_fetches,
             price_history: PriceHistory::new(60),
+            status_msg: None,
             should_quit: false,
             should_refresh: false,
             loading: true,
@@ -167,6 +171,13 @@ impl App {
             // Actions
             KeyCode::Char('r') => self.should_refresh = true,
             KeyCode::Char('s') => self.cycle_sort(),
+
+            // Copy to clipboard
+            KeyCode::Char('y') => {
+                if let Some(text) = self.get_copyable_text() {
+                    self.copy_to_clipboard(&text);
+                }
+            }
 
             // Token lookup search
             KeyCode::Char('/') if self.screen == Screen::TokenLookup => {
@@ -372,6 +383,88 @@ impl App {
             wallet.recent_txs = txs;
             wallet.loading = false;
         }
+    }
+
+    fn get_copyable_text(&self) -> Option<String> {
+        match self.screen {
+            Screen::Portfolio => {
+                let portfolio = self.portfolio.as_ref()?;
+                if self.table_selected == 0 {
+                    // SOL selected — copy wallet address
+                    Some(self.wallet.clone())
+                } else {
+                    // Token selected — copy mint address
+                    let visible: Vec<_> = portfolio
+                        .holdings
+                        .iter()
+                        .filter(|h| h.value_usd >= 0.01 || h.price_usd > 0.0)
+                        .collect();
+                    visible.get(self.table_selected - 1).map(|h| h.mint.clone())
+                }
+            }
+            Screen::Transactions => {
+                let txs = self.transactions.as_ref()?;
+                txs.get(self.tx_selected).map(|tx| tx.signature.clone())
+            }
+            Screen::Whales => self
+                .whale_state
+                .selected_wallet()
+                .map(|w| w.address.clone()),
+            Screen::TokenLookup => self.token_info.as_ref().map(|t| t.mint.clone()),
+            Screen::Help => None,
+        }
+    }
+
+    fn copy_to_clipboard(&mut self, text: &str) {
+        // Use pbcopy on macOS, xclip on Linux
+        let result = if cfg!(target_os = "macos") {
+            std::process::Command::new("pbcopy")
+                .stdin(std::process::Stdio::piped())
+                .spawn()
+                .and_then(|mut child| {
+                    use std::io::Write;
+                    if let Some(stdin) = child.stdin.as_mut() {
+                        stdin.write_all(text.as_bytes())?;
+                    }
+                    child.wait()
+                })
+        } else {
+            std::process::Command::new("xclip")
+                .arg("-selection")
+                .arg("clipboard")
+                .stdin(std::process::Stdio::piped())
+                .spawn()
+                .and_then(|mut child| {
+                    use std::io::Write;
+                    if let Some(stdin) = child.stdin.as_mut() {
+                        stdin.write_all(text.as_bytes())?;
+                    }
+                    child.wait()
+                })
+        };
+
+        let short = if text.len() > 12 {
+            format!("{}...{}", &text[..4], &text[text.len() - 4..])
+        } else {
+            text.to_string()
+        };
+
+        let msg = if result.is_ok() {
+            format!("Copied {short}")
+        } else {
+            format!("Copy failed: {short}")
+        };
+        self.status_msg = Some((msg, std::time::Instant::now()));
+    }
+
+    pub fn status_message(&self) -> Option<&str> {
+        self.status_msg.as_ref().and_then(|(msg, time)| {
+            if time.elapsed() < std::time::Duration::from_secs(3) {
+                Some(msg.as_str())
+            } else {
+                None
+            }
+        })
     }
 
     fn save_whales(&self) {

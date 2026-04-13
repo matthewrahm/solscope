@@ -25,13 +25,20 @@ pub fn draw(frame: &mut Frame, app: &App) {
 
     render_tabs(frame, chunks[0], app);
     render_content(frame, chunks[1], app);
-    status_bar::render(
-        frame,
-        chunks[2],
-        &app.wallet,
-        &app.last_refresh_label(),
-        app.loading,
-    );
+    // Status message overrides status bar briefly
+    if let Some(msg) = app.status_message() {
+        let bar = ratatui::widgets::Paragraph::new(format!("  {msg}"))
+            .style(Style::default().fg(theme::GREEN).bg(theme::BG_SURFACE));
+        frame.render_widget(bar, chunks[2]);
+    } else {
+        status_bar::render(
+            frame,
+            chunks[2],
+            &app.wallet,
+            &app.last_refresh_label(),
+            app.loading,
+        );
+    }
 }
 
 fn render_tabs(frame: &mut Frame, area: Rect, app: &App) {
