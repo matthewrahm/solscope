@@ -25,7 +25,13 @@ pub fn draw(frame: &mut Frame, app: &App) {
 
     render_tabs(frame, chunks[0], app);
     render_content(frame, chunks[1], app);
-    status_bar::render(frame, chunks[2], &app.wallet, &app.last_refresh_label());
+    status_bar::render(
+        frame,
+        chunks[2],
+        &app.wallet,
+        &app.last_refresh_label(),
+        app.loading,
+    );
 }
 
 fn render_tabs(frame: &mut Frame, area: Rect, app: &App) {
